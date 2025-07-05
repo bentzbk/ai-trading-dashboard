@@ -1,0 +1,126 @@
+Last login: Sat Jul  5 13:22:37 on ttys001
+admin@Bentzion-B-Mac ~ % git status
+fatal: not a git repository (or any of the parent directories): .git
+admin@Bentzion-B-Mac ~ % cd /Users/admin/Downloads/Library/Projects/WTO
+
+admin@Bentzion-B-Mac WTO % git status
+On branch backend
+All conflicts fixed but you are still merging.
+  (use "git commit" to conclude merge)
+
+Changes to be committed:
+	deleted:    backend:/backend_requirements_Version3.txt
+
+admin@Bentzion-B-Mac WTO % git commit
+hint: Waiting for your editor to close the file... 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Merge branch 'backend' of https://github.com/bentzbk/ai-trading-dashboard into backend
+# Please enter a commit message to explain why this merge is necessary,
+# especially if it merges an updated upstream into a topic branch.
+#
+# Lines starting with '#' will be ignored, and an empty message aborts
+# the commit.
+#
+# It looks like you may be committing a merge.
+# If this is not correct, please run
+#       git update-ref -d MERGE_HEAD
+# and try again.
+
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Committer: Admin <admin@Bentzion-B-Mac.local>
+#
+# On branch backend
+# All conflicts fixed but you are still merging.
+#
+# Changes to be committed:
+#       deleted:    backend:/backend_requirements_Version3.txt
+#merge to deploy on render
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+~                                                                                                     
+
