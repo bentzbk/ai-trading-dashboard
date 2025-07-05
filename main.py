@@ -2,13 +2,15 @@ import os
 import requests
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
 
-# Allow CORS for all origins (adjust as needed for production)
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,10 +18,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Root endpoint for health check or welcome message
+# Serve static files (CSS, JS, images) from /static
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve frontend HTML at root
 @app.get("/")
-def read_root():
-    return {"message": "API is running!"}
+async def serve_frontend():
+    return FileResponse(os.path.join("static", "index.html"))
 
 # Alpaca config
 ALPACA_API_BASE = "https://paper-api.alpaca.markets"
@@ -46,7 +51,6 @@ def get_recommendations():
     positions_data = requests.get(positions_url, headers=alpaca_headers()).json()
 
     # 2. Market data (Alpaca data API v2 for quotes)
-    # For demo, let's use a fixed list of symbols
     symbols = ["AAPL", "MSFT", "GOOG"]
     market_data = {}
     for symbol in symbols:
@@ -80,20 +84,7 @@ async def execute_trades(request: Request):
     results = []
     orders_url = f"{ALPACA_API_BASE}/v2/orders"
     for trade in trades:
-        # You might need to adapt keys to your Hugging Face output
         order = {
             "symbol": trade['symbol'],
             "qty": trade['quantity'],
             "side": trade['action'].lower(),  # 'buy' or 'sell'
-            "type": "limit" if 'limit_price' in trade else "market",
-            "time_in_force": "day"
-        }
-        if 'limit_price' in trade:
-            order["limit_price"] = trade["limit_price"]
-        resp = requests.post(orders_url, headers=alpaca_headers(), json=order)
-        results.append({
-            "trade": trade,
-            "status": resp.status_code,
-            "response": resp.json()
-        })
-    return {"results": results}
