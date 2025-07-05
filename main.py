@@ -7,12 +7,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+
+# Allow CORS for all origins (adjust as needed for production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Root endpoint for health check or welcome message
+@app.get("/")
+def read_root():
+    return {"message": "API is running!"}
 
 # Alpaca config
 ALPACA_API_BASE = "https://paper-api.alpaca.markets"
