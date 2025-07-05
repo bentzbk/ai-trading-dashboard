@@ -82,3 +82,119 @@
           "locale": "en"
         }
         </script>
+      </div>
+    </div>
+    <!-- Symbol Info Widget -->
+    <div class="widget-container">
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
+        {
+          "symbol": "NASDAQ:AAPL",
+          "width": "100%",
+          "locale": "en",
+          "colorTheme": "dark",
+          "isTransparent": false
+        }
+        </script>
+      </div>
+    </div>
+    <!-- Economic Calendar Widget -->
+    <div class="widget-container">
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+        {
+          "width": "100%",
+          "height": "100%",
+          "locale": "en",
+          "importanceFilter": "2,3",
+          "currencyFilter": "USD,EUR,JPY,GBP,ILS",
+          "colorTheme": "dark",
+          "isTransparent": false
+        }
+        </script>
+      </div>
+    </div>
+    <!-- AI Trade Recommendations Widget -->
+    <div class="widget-container">
+      <h3>AI Trade Recommendations</h3>
+      <button onclick="getRecommendations()" class="trade-action-btn">Get Today’s Trade Ideas</button>
+      <div id="trade-recommendations" class="recommendation-list"></div>
+      <button onclick="executePaperTrades()" class="trade-action-btn">Execute All Recommended Trades (Paper)</button>
+      <div id="trade-status"></div>
+    </div>
+    <!-- Trade Log Widget -->
+    <div class="widget-container">
+      <h3>Trade Log</h3>
+      <table id="trade-log-table" style="width:100%; color:#fff; background:#181a20; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="border-bottom:1px solid #444;">Time (UTC)</th>
+            <th style="border-bottom:1px solid #444;">Symbol</th>
+            <th style="border-bottom:1px solid #444;">Action</th>
+            <th style="border-bottom:1px solid #444;">Quantity</th>
+            <th style="border-bottom:1px solid #444;">Price</th>
+          </tr>
+        </thead>
+        <tbody id="trade-log-body">
+          <!-- Trade rows will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    let currentRecommendations = [];
+    async function getRecommendations() {
+      document.getElementById('trade-recommendations').innerText = 'Loading...';
+      const res = await fetch('http://localhost:8000/api/recommendations');
+      const data = await res.json();
+      currentRecommendations = data.recommendations.trades || [];
+      document.getElementById('trade-recommendations').innerHTML =
+        '<pre>' + JSON.stringify(currentRecommendations, null, 2) + '</pre>';
+    }
+    async function executePaperTrades() {
+      if (!currentRecommendations.length) {
+        alert("No trade recommendations to execute!");
+        return;
+      }
+      document.getElementById('trade-status').innerText = 'Executing...';
+      const res = await fetch('http://localhost:8000/api/execute_trades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trades: currentRecommendations })
+      });
+      const data = await res.json();
+      document.getElementById('trade-status').innerHTML =
+        '<pre>' + JSON.stringify(data.results, null, 2) + '</pre>';
+    }
+
+    // Trade Log JS
+    async function fetchTradeLog() {
+      try {
+        const response = await fetch('http://localhost:8000/api/trades');
+        const trades = await response.json();
+        const tbody = document.getElementById('trade-log-body');
+        tbody.innerHTML = ''; // Clear existing rows
+
+        trades.slice().reverse().forEach(trade => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td style="border-bottom:1px solid #333;">${trade.timestamp || ''}</td>
+            <td style="border-bottom:1px solid #333;">${trade.symbol || ''}</td>
+            <td style="border-bottom:1px solid #333;">${trade.action || ''}</td>
+            <td style="border-bottom:1px solid #333;">${trade.quantity || ''}</td>
+            <td style="border-bottom:1px solid #333;">${trade.price || ''}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        const tbody = document.getElementById('trade-log-body');
+        tbody.innerHTML = '<tr><td colspan="5" style="color:#f66;">Failed to load trade log.</td></tr>';
+      }
+    }
+    setInterval(fetchTradeLog, 5000);
+    fetchTradeLog();
+  </script>
+</body>
+</html>
