@@ -2,7 +2,7 @@ import os
 import requests
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
@@ -25,6 +25,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 async def serve_frontend():
     return FileResponse(os.path.join("static", "index.html"))
+
+# --- TRADE LOG (NEW) ---
+# Example: In-memory trade log (replace with your real trade log logic)
+trade_log = [
+    {"timestamp": "2025-07-05 14:00", "action": "BUY", "symbol": "AAPL", "price": 195.23},
+    {"timestamp": "2025-07-05 14:10", "action": "SELL", "symbol": "GOOG", "price": 2780.50},
+]
+
+@app.get("/api/trade_log")
+def get_trade_log():
+    return JSONResponse(trade_log)
+# --- END TRADE LOG ---
 
 # Alpaca config
 ALPACA_API_BASE = "https://paper-api.alpaca.markets"
