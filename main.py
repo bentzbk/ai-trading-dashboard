@@ -88,3 +88,15 @@ async def execute_trades(request: Request):
             "symbol": trade['symbol'],
             "qty": trade['quantity'],
             "side": trade['action'].lower(),  # 'buy' or 'sell'
+            "type": "limit" if 'limit_price' in trade else "market",
+            "time_in_force": "day"
+        }
+        if 'limit_price' in trade:
+            order["limit_price"] = trade["limit_price"]
+        resp = requests.post(orders_url, headers=alpaca_headers(), json=order)
+        results.append({
+            "trade": trade,
+            "status": resp.status_code,
+            "response": resp.json()
+        })
+    return {"results": results}
