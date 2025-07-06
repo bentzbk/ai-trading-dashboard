@@ -1,7 +1,6 @@
 import os
 import requests
 
-# Load Hugging Face Inference API credentials from environment variables
 HUGGINGFACE_API_URL = os.getenv("HUGGINGFACEAPIURL")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACEAPIKEY")
 
