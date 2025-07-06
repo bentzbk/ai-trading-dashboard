@@ -1,12 +1,25 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from datetime import datetime
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.staticfiles import StaticFiles
+from datetime import datetime, timedelta
 from typing import List, Dict, Any
+from jose import JWTError, jwt
+import pyotp
 
 # Alpaca SDK
 from alpaca.trading.client import TradingClient
+
+# --- CONFIGURATION ---
+SECRET_KEY = "super-secret-key"  # Change for production
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+USERNAME = "bentzi"
+PASSWORD = "your_strong_password"  # Set your password here
+TOTP_SECRET = "JBSWY3DPEHPK3PXP"  # Generate your own base32 secret for authenticator app
 
 app = FastAPI()
 
@@ -19,6 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 # In-memory AI action log
 ai_action_log: List[Dict[str, Any]] = []
 
@@ -28,65 +43,44 @@ DUMMY_TRADES = [
     {"symbol": "TSLA", "quantity": 5, "action": "sell"}
 ]
 
-@app.get("/get_trade_ideas")
-def get_trade_ideas():
-    ai_action_log.append({
-        "action": "get_trade_ideas",
-        "status": "success",
-        "details": "Fetched dummy trade ideas",
-        "timestamp": datetime.now().isoformat()
-    })
-    return {"trades": DUMMY_TRADES}
+def authenticate_user(username: str, password: str, otp: str):
+    if username != USERNAME or password != PASSWORD:
+        return False
+    totp = pyotp.TOTP(TOTP_SECRET)
+    return totp.verify(otp)
 
-@app.post("/execute_trades")
-async def execute_trades(request: Request):
-    payload = await request.json()
-    trades = payload.get("trades", [])
-    results = []
-    for trade in trades:
-        # Simulate execution
-        results.append({
-            "symbol": trade["symbol"],
-            "quantity": trade["quantity"],
-            "action": trade["action"],
-            "status": "executed"
-        })
-    ai_action_log.append({
-        "action": "execute_trades",
-        "status": "success",
-        "details": f"Executed {len(trades)} trades",
-        "timestamp": datetime.now().isoformat()
-    })
-    return {"results": results}
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-@app.get("/account_info")
-def get_account_info():
-    api_key = os.getenv("ALPACA_API_KEY")
-    secret_key = os.getenv("ALPACA_SECRET_KEY")
-    paper = True  # Use paper trading
-
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
-        client = TradingClient(api_key, secret_key, paper=paper)
-        account = client.get_account()
-        equity = float(account.equity)
-        last_equity = float(account.last_equity)
-        buying_power = float(account.buying_power)
-        pnl = equity - last_equity
-        return {
-            "equity": equity,
-            "last_equity": last_equity,
-            "buying_power": buying_power,
-            "pnl": pnl
-        }
-    except Exception as e:
-        return {
-            "equity": 0.0,
-            "last_equity": 0.0,
-            "buying_power": 0.0,
-            "pnl": 0.0,
-            "error": str(e)
-        }
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username != USERNAME:
+            raise credentials_exception
+        return username
+    except JWTError:
+        raise credentials_exception
 
-@app.get("/ai_action_log")
-def get_ai_action_log():
-    return JSONResponse(content={"log": ai_action_log})
+@app.post("/login")
+async def login(
+    username: str = Form(...),
+    password: str = Form(...),
+    otp: str = Form(...)
+):
+    if not authenticate_user(username, password, otp):
+        raise HTTPException(status_code=400, detail="Incorrect username, password, or OTP code")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
