@@ -1,13 +1,11 @@
 from model import query_huggingface_model
 
-def recommend_trades(live_data):
+def recommend_trades(processed_data):
     """
-    Prepare the input for the Hugging Face model and get trade recommendations.
+    Feed preprocessed data to the Hugging Face model and return recommendations.
     """
-    # Format the payload as required by your Hugging Face model
     payload = {
-        "inputs": live_data  # Adjust this structure to match your model's expected input
+        "inputs": processed_data  # Adjust this key as needed for your model
     }
     model_response = query_huggingface_model(payload)
-    # Optionally, add post-processing for technical checks or formatting
     return model_response
