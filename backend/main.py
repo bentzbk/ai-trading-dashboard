@@ -8,9 +8,9 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Mount static using a relative path to the sibling directory
-static_dir = os.path.join(os.path.dirname(__file__), "../static")
-print(f"STATIC DIR: {os.path.abspath(static_dir)} EXISTS: {os.path.exists(static_dir)}")
+# Use path relative to backend to reach static in project root
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
+print(f"STATIC DIR: {static_dir} EXISTS: {os.path.exists(static_dir)}")  # Debug print
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -42,3 +42,4 @@ async def get_live_data(symbols: str = "AAPL"):
     symbol_list = [s.strip() for s in symbols.split(",")]
     bars = fetch_live_data(symbol_list)
     return {"bars": {s: [b.dict() for b in bars[s]] for s in bars}}
+
