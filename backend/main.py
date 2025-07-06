@@ -8,9 +8,10 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Serve static files from the project root static directory
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-static_dir = os.path.join(project_root, "static")
+# Dynamically resolve static directory path and print debug info
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
+print(f"STATIC DIR: {static_dir} EXISTS: {os.path.exists(static_dir)}")  # Debug print
+
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.post("/train-data")
