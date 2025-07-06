@@ -8,9 +8,9 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Dynamically resolve static directory path and print debug info
-static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
-print(f"STATIC DIR: {static_dir} EXISTS: {os.path.exists(static_dir)}")  # Debug print
+# Mount static using a relative path to the sibling directory
+static_dir = os.path.join(os.path.dirname(__file__), "../static")
+print(f"STATIC DIR: {os.path.abspath(static_dir)} EXISTS: {os.path.exists(static_dir)}")
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
