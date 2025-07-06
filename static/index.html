@@ -46,7 +46,7 @@
     button:hover {
       background-color: #50576e;
     }
-    #recommendations, #trade-log {
+    #recommendations, #trade-log, #ai-action-log {
       background: #181a20;
       color: #fff;
       padding: 10px;
@@ -67,6 +67,10 @@
       border: 1px solid #444;
       padding: 6px;
       text-align: left;
+    }
+    #account-info {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
     }
   </style>
 </head>
@@ -134,6 +138,11 @@
     <!-- Dashboard Controls and Outputs -->
     <div class="widget-container" style="grid-column: span 3; overflow-y: auto;">
       <h2>AI Trading Dashboard Controls</h2>
+      <div id="account-info">
+        <strong>Account Value:</strong> <span id="account-value">$0.00</span>
+        &nbsp; | &nbsp;
+        <strong>Overall P/L:</strong> <span id="account-pnl">$0.00</span>
+      </div>
       <button id="fetch-trades-btn">Get Today's Trade Ideas</button>
       <button id="execute-trades-btn">Execute All Recommended Trades Paper</button>
 
@@ -154,6 +163,9 @@
           <tr><td colspan="4">No trades executed yet.</td></tr>
         </tbody>
       </table>
+
+      <h3>AI Model Action Log</h3>
+      <pre id="ai-action-log">No AI actions yet.</pre>
     </div>
   </div>
 
@@ -162,8 +174,37 @@
   const executeBtn = document.getElementById('execute-trades-btn');
   const recommendationsPre = document.getElementById('recommendations');
   const tradeLogBody = document.getElementById('trade-log-body');
-
   let currentRecommendations = [];
+
+  async function updateAccountInfo() {
+    try {
+      const res = await fetch('http://localhost:8000/account_info');
+      if (!res.ok) throw new Error('Failed to fetch account info');
+      const data = await res.json();
+      document.getElementById('account-value').textContent = `$${parseFloat(data.equity).toFixed(2)}`;
+      document.getElementById('account-pnl').textContent = `$${parseFloat(data.pnl).toFixed(2)}`;
+    } catch (err) {
+      document.getElementById('account-value').textContent = 'N/A';
+      document.getElementById('account-pnl').textContent = 'N/A';
+    }
+  }
+
+  async function updateAIActionLog() {
+    try {
+      const res = await fetch('http://localhost:8000/ai_action_log');
+      if (!res.ok) throw new Error('Failed to fetch AI action log');
+      const data = await res.json();
+      if (data.log && data.log.length > 0) {
+        document.getElementById('ai-action-log').textContent = data.log.map(
+          entry => `[${entry.timestamp}] ${entry.action}: ${entry.status} - ${entry.details}`
+        ).join('\n');
+      } else {
+        document.getElementById('ai-action-log').textContent = 'No AI actions yet.';
+      }
+    } catch (err) {
+      document.getElementById('ai-action-log').textContent = 'Error fetching AI log.';
+    }
+  }
 
   fetchBtn.addEventListener('click', async () => {
     recommendationsPre.textContent = 'Fetching trade ideas...';
@@ -180,6 +221,8 @@
     } catch (err) {
       recommendationsPre.textContent = `Error fetching trade ideas: ${err.message}`;
     }
+    updateAIActionLog();
+    updateAccountInfo();
   });
 
   executeBtn.addEventListener('click', async () => {
@@ -215,7 +258,13 @@
     } catch (err) {
       tradeLogBody.innerHTML = `<tr><td colspan="4">Error executing trades: ${err.message}</td></tr>`;
     }
+    updateAIActionLog();
+    updateAccountInfo();
   });
+
+  // Initial load
+  updateAccountInfo();
+  updateAIActionLog();
 </script>
 
 </body>
