@@ -1,11 +1,17 @@
 import os
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 from data_fetcher import fetch_historical_data, fetch_live_data
 from preprocessing import preprocess_stream
 from trade_logic import recommend_trades
 from datetime import datetime
 
 app = FastAPI()
+
+# Serve static files from the project root static directory
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(project_root, "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.post("/train-data")
 async def get_train_data(request: Request):
