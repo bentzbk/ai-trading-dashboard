@@ -38,7 +38,7 @@ async def recommend_trades_endpoint(request: Request):
     return recommendations
 
 @app.get("/live-data")
-async def get_live_data(symbols: str = "AAPL"):
+async def get_live_data(symbols: str = "VONG"):
     symbol_list = [s.strip() for s in symbols.split(",")]
     bars = fetch_live_data(symbol_list)
     return {"bars": {s: [b.dict() for b in bars[s]] for s in bars}}
