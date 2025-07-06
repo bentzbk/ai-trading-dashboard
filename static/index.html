@@ -24,6 +24,199 @@
       background: #23272f;
       border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 2px 10px rgba
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      height: 100%;
+      width: 100%;
+      min-width: 320px;
+      position: relative;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    button {
+      background-color: #3a3f51;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin: 8px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #50576e;
+    }
+    #recommendations, #trade-log {
+      background: #181a20;
+      color: #fff;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 5px;
+      overflow-y: auto;
+      max-height: 30vh;
+      font-family: monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+    #trade-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
+    }
+    #trade-log-table th, #trade-log-table td {
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-grid">
+    <!-- Advanced Chart Widget -->
+    <div class="widget-container">
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+        {
+          "width": "100%",
+          "height": "100%",
+          "symbol": "NASDAQ:AAPL",
+          "interval": "15",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "9",
+          "locale": "en",
+          "allow_symbol_change": true,
+          "save_image": false,
+          "calendar": true,
+          "studies": ["STD;Bollinger_Bands", "STD;RSI"],
+          "support_host": "https://www.tradingview.com"
+        }
+        </script>
+      </div>
+    </div>
 
-    
+    <!-- Screener Widget -->
+    <div class="widget-container">
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
+        {
+          "width": "100%",
+          "height": "100%",
+          "defaultColumn": "overview",
+          "defaultScreen": "most_capitalized",
+          "market": "us",
+          "showToolbar": true,
+          "colorTheme": "dark",
+          "locale": "en"
+        }
+        </script>
+      </div>
+    </div>
+
+    <!-- Symbol Info Widget -->
+    <div class="widget-container">
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
+        {
+          "symbol": "NASDAQ:AAPL",
+          "width": "100%",
+          "locale": "en",
+          "colorTheme": "dark",
+          "isTransparent": false
+        }
+        </script>
+      </div>
+    </div>
+
+    <!-- Dashboard Controls and Outputs -->
+    <div class="widget-container" style="grid-column: span 3; overflow-y: auto;">
+      <h2>AI Trading Dashboard Controls</h2>
+      <button id="fetch-trades-btn">Get Today's Trade Ideas</button>
+      <button id="execute-trades-btn">Execute All Recommended Trades Paper</button>
+
+      <h3>Trade Recommendations</h3>
+      <pre id="recommendations">No recommendations yet.</pre>
+
+      <h3>Trade Log</h3>
+      <table id="trade-log-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Quantity</th>
+            <th>Action</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="trade-log-body">
+          <tr><td colspan="4">No trades executed yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+  const fetchBtn = document.getElementById('fetch-trades-btn');
+  const executeBtn = document.getElementById('execute-trades-btn');
+  const recommendationsPre = document.getElementById('recommendations');
+  const tradeLogBody = document.getElementById('trade-log-body');
+
+  let currentRecommendations = [];
+
+  fetchBtn.addEventListener('click', async () => {
+    recommendationsPre.textContent = 'Fetching trade ideas...';
+    try {
+      const res = await fetch('http://localhost:8000/get_trade_ideas');
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      currentRecommendations = data.trades || [];
+      if (currentRecommendations.length === 0) {
+        recommendationsPre.textContent = 'No trade ideas received.';
+      } else {
+        recommendationsPre.textContent = JSON.stringify(currentRecommendations, null, 2);
+      }
+    } catch (err) {
+      recommendationsPre.textContent = `Error fetching trade ideas: ${err.message}`;
+    }
+  });
+
+  executeBtn.addEventListener('click', async () => {
+    if (currentRecommendations.length === 0) {
+      alert('No trade recommendations to execute. Please fetch trade ideas first.');
+      return;
+    }
+    tradeLogBody.innerHTML = '<tr><td colspan="4">Executing trades...</td></tr>';
+    try {
+      const res = await fetch('http://localhost:8000/execute_trades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trades: currentRecommendations }),
+      });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      const results = data.results || [];
+      if (results.length === 0) {
+        tradeLogBody.innerHTML = '<tr><td colspan="4">No trades executed.</td></tr>';
+      } else {
+        tradeLogBody.innerHTML = '';
+        results.forEach(trade => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${trade.symbol}</td>
+            <td>${trade.quantity}</td>
+            <td>${trade.action}</td>
+            <td>${trade.status}</td>
+          `;
+          tradeLogBody.appendChild(row);
+        });
+      }
+    } catch (err) {
+      tradeLogBody.innerHTML = `<tr><td colspan="4">Error executing trades: ${err.message}</td></tr>`;
+    }
+  });
+</script>
+
+</body>
+</html>
