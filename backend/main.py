@@ -18,7 +18,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 USERNAME = "bentzi"
-PASSWORD = "your_strong_password"  # Set your password here
+PASSWORD = "Yaffo2021"  # Set your password here
 TOTP_SECRET = "JBSWY3DPEHPK3PXP"  # Generate your own base32 secret for authenticator app
 
 app = FastAPI()
