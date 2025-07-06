@@ -83,4 +83,4 @@ async def login(
     if not authenticate_user(username, password, otp):
         raise HTTPException(status_code=400, detail="Incorrect username, password, or OTP code")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = create_access_token()
